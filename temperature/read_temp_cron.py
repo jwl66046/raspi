@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 '''
-This application will read the temperature of the probe
-and print output in (Celsuis, Farenheit) format every
-1 second
+
+When this application is called, it will read the temperature of 
+the probe and print output in Farenheit
+
 '''
 
 import os
 import glob
 import time
+import plotly.plotly as py
+import plotly.graph_objs as go
+import json
+import datetime
+
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
@@ -16,6 +22,11 @@ base_dir = '/sys/bus/w1/devices/'
 device_folder = glob.glob(base_dir + '28*')[0]
 device_file = device_folder + '/w1_slave'
 log_file = '/home/pi/raspi/temperature/output_file.log'
+
+with open('./config.json') as config_file:
+    plotly_user_config = json.load(config_file)
+
+    py.sign_in(plotly_user_config["plotly_username"], plotly_user_config["plotly_api_key"])
 
 
 def read_temp_raw():
@@ -38,3 +49,28 @@ def read_temp():
 
 with open(log_file, "a") as myfile:
         myfile.write(time.strftime("%c") + "\t" + str(read_temp()) + '\n')
+
+
+deg_f = read_temp()
+time_stamp = time.strftime("%c")
+
+data = [go.Scatter( x = time_stamp, y = deg_f)]
+
+url = py.plot([
+    {
+        'x': [], 'y': [], 'type': 'scatter',
+        'stream': {
+            'token': plotly_user_config['plotly_streaming_tokens'][0],
+            'maxpoints': 200
+        }
+    }], filename='Raspberry Pi Streaming Example Values')
+
+print("View your streaming graph here: ", url)
+
+
+stream = py.Stream(plotly_user_config['plotly_streaming_tokens'][0])
+stream.open()
+
+stream.write({'x': datetime.datetime.now(), 'y': deg_f})
+
+

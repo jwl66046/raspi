@@ -2,7 +2,9 @@
 '''
 
 When this application is called, it will read the temperature of 
-the probe and print output in Farenheit
+the probe and print output in Farenheit.
+
+The result is then sent to Plotly via their API.
 
 '''
 
